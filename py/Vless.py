@@ -234,7 +234,7 @@ def write_nodes(results: List[Tuple[str, Optional[float]]], output_path: str = "
             lines.append(f"{d}#{code} {name}")
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
-    print(f"Nodes.txt: {len(lines)} 个节点（{len(COUNTRY_DOMAINS)} 个国家分组）")
+    print(f"Nodes.txt: {len(lines)} 个节点（{len(COUNTRY_DOMAINS)} 个国家分组）", file=__import__("sys").stderr)
 
 async def main() -> None:
     domains = normalize_domains(RAW_ITEMS)
