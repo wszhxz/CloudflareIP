@@ -115,22 +115,6 @@ RAW_ITEMS = [
 
 ]
 
-# ===== 国家分组域名（方案B：域名当节点，入口解析到 Cloudflare IP）=====
-# 每国最多输出 2 个（1 主 1 备），按实测延迟排序；无可用域名则跳过
-# 域名需解析到 Cloudflare IP（已验证 2026-08-04，dig @223.5.5.5）
-COUNTRY_DOMAINS = {
-    "HK": ("中国香港", ["hk.cf.090227.xyz", "icook.hk", "www.visa.com.hk"]),
-    "JP": ("日本", ["jp.cf.090227.xyz", "japan.com", "www.visa.co.jp", "nrt.xxxxxxxx.nyc.mn", "nrtcfdns.zone.id"]),
-    "SG": ("新加坡", ["sg.cf.090227.xyz", "singapore.com", "www.visa.com.sg"]),
-    "US": ("美国", ["us.cf.090227.xyz", "time.is", "ip.sb", "fbi.gov", "www.4chan.org", "www.udacity.com", "www.pcmag.com", "time.cloudflare.com", "www.visa.com"]),
-    "DE": ("德国", ["de.cf.090227.xyz", "eu.cf.090227.xyz"]),
-    "NL": ("荷兰", ["nl.cf.090227.xyz", "eu.cf.090227.xyz"]),
-    "GB": ("英国", ["gb.cf.090227.xyz", "uk.cf.090227.xyz"]),
-    "KR": ("韩国", ["kr.cf.090227.xyz", "www.visakorea.com"]),
-    "TW": ("中国台湾", ["tw.cf.090227.xyz", "icook.tw", "www.visa.com.tw"]),
-}
-
-
 VLESS_TEMPLATE = (
     "自定义1#自定义2"
 )
@@ -215,32 +199,10 @@ def write_top20(results: List[Tuple[str, Optional[float]]], output_path: str = "
         for line in lines:
             f.write(line + "\n")
 
-def write_nodes(results: List[Tuple[str, Optional[float]]], output_path: str = "Nodes.txt") -> None:
-    """按国家分组输出每国最快的前2个域名（1主1备），跳过超时域名。
-
-    Nodes.txt 每行格式: 域名#国家代码 中文名
-    _worker.js 的 /sub 订阅拉取此文件，用部署者自己的 UUID/域名/反代拼 vless 链接。
-    """
-    latency_map = {d: ms for d, ms in results}
-    lines = []
-    for code, (name, domains) in COUNTRY_DOMAINS.items():
-        scored = []
-        for d in domains:
-            ms = latency_map.get(d)
-            if ms is not None:  # 跳过超时/不可达域名，宁缺毋滥
-                scored.append((ms, d))
-        scored.sort()  # 延迟升序
-        for ms, d in scored[:2]:
-            lines.append(f"{d}#{code} {name}")
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
-    print(f"Nodes.txt: {len(lines)} 个节点（{len(COUNTRY_DOMAINS)} 个国家分组）", file=__import__("sys").stderr)
-
 async def main() -> None:
     domains = normalize_domains(RAW_ITEMS)
     results = await gather_latencies(domains)
     write_top20(results)
-    write_nodes(results)
     # Also print a brief summary
     printable = sorted(
         results,

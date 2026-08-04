@@ -30,8 +30,6 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add Vless.txt Nodes.txt
-          git commit -m "Auto update Vless.txt Nodes.txt [skip ci]" || echo "No changes to commit"
-          # 并发 workflow 竞争修复：rebase 后再 push，避免 non-fast-forward 拒绝
-          git pull --rebase origin main || true
+          git add Vless.txt
+          git commit -m "Auto update Vless.txt [skip ci]" || echo "No changes to commit"
           git push
