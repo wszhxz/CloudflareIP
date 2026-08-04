@@ -1,0 +1,46 @@
+name: Community
+
+on:
+  schedule:
+    - cron: '30 2 * * 3'  # 每周三 02:30 UTC，与各国 workflow 错开
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Fetch community HK/KR nodes
+        run: |
+          python3 << 'EOF'
+          import urllib.request
+          BASE = "https://raw.githubusercontent.com/zoroaaa/cf-bestip/gh-pages"
+          # HK: community cf-ray verified HKG Colo IPs
+          hk = urllib.request.urlopen(BASE + "/ip_HK.txt", timeout=30).read().decode()
+          with open("HK.txt", "w") as f:
+              for line in hk.strip().splitlines():
+                  if ":" in line and "#" in line:
+                      ip = line.split(":")[0]
+                      f.write(f"{ip}#HK 中国香港\n")
+          # KR: filter KR-tagged IPs from ip_all.txt
+          all_data = urllib.request.urlopen(BASE + "/ip_all.txt", timeout=30).read().decode()
+          kr_ips = []
+          for line in all_data.strip().splitlines():
+              if "#KR-" in line:
+                  ip = line.split(":")[0]
+                  if ip not in kr_ips:
+                      kr_ips.append(ip)
+          with open("KR.txt", "w") as f:
+              for ip in kr_ips[:6]:
+                  f.write(f"{ip}#KR 韩国\n")
+          print(f"HK.txt: {len(hk.strip().splitlines())} lines, KR.txt: {len(kr_ips[:6])} lines")
+          EOF
+      - name: Commit result
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add HK.txt KR.txt
+          git commit -m "Auto update HK/KR community nodes [skip ci]" || echo "No changes to commit"
+          git pull --rebase origin main || true
+          git push

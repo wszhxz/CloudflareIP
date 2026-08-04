@@ -14,9 +14,10 @@ let 反代IP = 'proxyip.cmliussss.net'; //反代IP
 async function fetchSpeedNodes(uuid, domain, proxyIP) {
   const BASE = "https://raw.githubusercontent.com/wszhxz/CloudflareIP/main";
   const regionFiles = {
-    SG: "SG.txt", JP: "JP.txt", DE: "DE.txt", NL: "NL.txt", US: "US.txt"
+    SG: "SG.txt", JP: "JP.txt", DE: "DE.txt", NL: "NL.txt", US: "US.txt",
+    HK: "HK.txt", KR: "KR.txt"  // HK/KR: community cf-ray verified Colo IPs
   };
-  const cnames = { SG: "\u65b0\u52a0\u5761", JP: "\u65e5\u672c", US: "\u7f8e\u56fd", DE: "\u5fb7\u56fd", NL: "\u8377\u5170" };
+  const cnames = { SG: "\u65b0\u52a0\u5761", JP: "\u65e5\u672c", US: "\u7f8e\u56fd", DE: "\u5fb7\u56fd", NL: "\u8377\u5170", HK: "\u4e2d\u56fd\u9999\u6e2f", KR: "\u97e9\u56fd" };
 
   const nodes = [];
 
@@ -26,7 +27,6 @@ async function fetchSpeedNodes(uuid, domain, proxyIP) {
     for (const [code, file] of Object.entries(regionFiles)) {
       fetches[code] = fetch(BASE + "/" + file).then(r => r.ok ? r.text() : "").catch(() => "");
     }
-    // HK removed: Cloudflare anycast IPs have no true geolocation
 
     const results = {};
     for (const code of Object.keys(fetches)) {
@@ -81,7 +81,8 @@ export default {
                 节点列表 = [
                     `vless://${我的VL密钥}@198.41.223.110:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#SG 新加坡`,
                     `vless://${我的VL密钥}@162.159.38.118:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#JP 日本`,
-                    // HK removed: unreliable anycast geolocation
+                    `vless://${我的VL密钥}@104.16.16.230:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#HK 中国香港`,
+                    `vless://${我的VL密钥}@104.16.108.62:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#KR 韩国`,
                     `vless://${我的VL密钥}@104.16.94.26:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#US 美国`,
                     `vless://${我的VL密钥}@104.25.0.89:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#DE 德国`,
                     `vless://${我的VL密钥}@188.114.97.3:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#NL 荷兰`,

@@ -41,10 +41,14 @@ async def main():
     by_colo = defaultdict(list)
     for colo, ip, _, _ in results:
         by_colo[colo].append(ip)
-    print(f"\n=== Colo 统计 (总有效 {len(results)} IP, 采样 {len(cidrs)} 段) ===")
+    lines = [f"=== Colo 统计 (总有效 {len(results)} IP, 采样 {len(cidrs)} 段) ==="]
     for colo in sorted(by_colo, key=lambda c: -len(by_colo[c])):
         ips = by_colo[colo]
-        print(f"{colo}: {len(ips)} 个 IP | 示例: {', '.join(ips[:3])}")
+        lines.append(f"{colo}: {len(ips)} 个 IP | 示例: {', '.join(ips[:3])}")
+    report = "\n".join(lines)
+    print(report)
+    with open("colo-report.txt", "w") as f:
+        f.write(report + "\n")
 
 if __name__ == "__main__":
     asyncio.run(main())
