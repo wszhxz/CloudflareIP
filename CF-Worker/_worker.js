@@ -10,46 +10,22 @@ let 我的VL密钥 = '60fe73d3-dbf3-44b2-804c-1f791363ef62';//UUID
 let 反代IP = 'proxyip.cmliussss.net'; //反代IP
 
 
-// Dynamic node fetching from GitHub Actions (hourly updated per-region TXT files)
+// 动态获取最新测速节点（从 GitHub Actions 产出）
+// Nodes.txt 由 py/Vless.py 生成：每行 "域名#国家代码 中文名"，每国 1 主 1 备（按延迟排序）
+// 入口用解析到 Cloudflare IP 的域名，SNI/host 用部署域名保证路由到本 worker
 async function fetchSpeedNodes(uuid, domain, proxyIP) {
   const BASE = "https://raw.githubusercontent.com/wszhxz/CloudflareIP/main";
-  const regionFiles = {
-    SG: "SG.txt", JP: "JP.txt", DE: "DE.txt", NL: "NL.txt", US: "US.txt"
-  };
-  const cnames = { SG: "\u65b0\u52a0\u5761", JP: "\u65e5\u672c", US: "\u7f8e\u56fd", DE: "\u5fb7\u56fd", NL: "\u8377\u5170" };
-
   const nodes = [];
 
   try {
-    // Fetch all per-region TXT files in parallel
-    const fetches = {};
-    for (const [code, file] of Object.entries(regionFiles)) {
-      fetches[code] = fetch(BASE + "/" + file).then(r => r.ok ? r.text() : "").catch(() => "");
-    }
-    // HK removed: Cloudflare anycast IPs have no true geolocation
-
-    const results = {};
-    for (const code of Object.keys(fetches)) {
-      results[code] = await fetches[code];
-    }
-
-    // Parse each region: take top 3 IPs (already sorted by latency in files)
-    for (const [code, name] of Object.entries(cnames)) {
-      const text = results[code];
-      if (!text) continue;
-      const lines = text.split("\n");
-      const seen = new Set();
-      let count = 0;
-      for (const line of lines) {
-        if (count >= 3) break;
-        // SG.txt format: "IP#sg \u3010\u65b0\u52a0\u5761\u3011 SG"
-        const m = line.match(/^([\d.]+)#/);
+    const text = await fetch(BASE + "/Nodes.txt").then(r => r.ok ? r.text() : "").catch(() => "");
+    if (text) {
+      for (const line of text.split("\n")) {
+        // Nodes.txt format: "域名#HK 中国香港"
+        const m = line.match(/^([\w.-]+)#([A-Z]{2})\s+(.+)$/);
         if (!m) continue;
-        const ip = m[1];
-        if (seen.has(ip)) continue;
-        seen.add(ip);
-        nodes.push("vless://"+uuid+"@"+ip+":443?encryption=none&security=tls&sni="+domain+"&fp=random&type=ws&host="+domain+"&path=pyip%3D"+proxyIP+"#"+code+" "+name);
-        count++;
+        const host = m[1];
+        nodes.push("vless://"+uuid+"@"+host+":443?encryption=none&security=tls&sni="+domain+"&fp=random&type=ws&host="+domain+"&path=pyip%3D"+proxyIP+"#"+m[2]+" "+m[3]);
       }
     }
   } catch (e) { console.error("fetchSpeedNodes error:", e.message); }
@@ -79,12 +55,15 @@ export default {
             // 如果获取失败，使用静态后备
             if (节点列表.length === 0) {
                 节点列表 = [
-                    `vless://${我的VL密钥}@198.41.223.110:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#SG 新加坡`,
-                    `vless://${我的VL密钥}@162.159.38.118:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#JP 日本`,
-                    // HK removed: unreliable anycast geolocation
-                    `vless://${我的VL密钥}@104.16.94.26:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#US 美国`,
-                    `vless://${我的VL密钥}@104.25.0.89:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#DE 德国`,
-                    `vless://${我的VL密钥}@188.114.97.3:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#NL 荷兰`,
+                    `vless://${我的VL密钥}@hk.cf.090227.xyz:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#HK 中国香港`,
+                    `vless://${我的VL密钥}@jp.cf.090227.xyz:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#JP 日本`,
+                    `vless://${我的VL密钥}@sg.cf.090227.xyz:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#SG 新加坡`,
+                    `vless://${我的VL密钥}@us.cf.090227.xyz:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#US 美国`,
+                    `vless://${我的VL密钥}@de.cf.090227.xyz:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#DE 德国`,
+                    `vless://${我的VL密钥}@nl.cf.090227.xyz:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#NL 荷兰`,
+                    `vless://${我的VL密钥}@gb.cf.090227.xyz:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#GB 英国`,
+                    `vless://${我的VL密钥}@kr.cf.090227.xyz:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#KR 韩国`,
+                    `vless://${我的VL密钥}@icook.tw:443?encryption=none&security=tls&sni=${部署域名}&fp=random&type=ws&host=${部署域名}&path=pyip%3D${反代IP}#TW 中国台湾`,
                 ];
             }
             if (请求URL.searchParams.has('sub')) {
