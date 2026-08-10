@@ -24,7 +24,7 @@ jobs:
 
       - name: Run script and save output
         run: |
-          python py/DE.py > DE.txt
+          python py/DE.py
 
       - name: Commit result
         run: |

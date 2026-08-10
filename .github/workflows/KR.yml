@@ -24,7 +24,7 @@ jobs:
 
       - name: Run script and save output
         run: |
-          python py/KR.py > KR.txt
+          python py/KR.py
 
       - name: Commit result
         run: |
