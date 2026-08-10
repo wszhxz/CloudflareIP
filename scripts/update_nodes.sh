@@ -15,8 +15,12 @@ LOG="scripts/update_nodes.log"
 
 log() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
 
-# ---------- 1. 关 VPN ----------
-log "=== 1. 关闭 VPN ($VPN) ==="
+# ---------- 0. 记录初始 VPN 状态 (结束后恢复, 不改用户状态) ----------
+INIT_STATE=$(/usr/sbin/scutil --nc status "$VPN" 2>/dev/null | head -1)
+log "=== 0. 运行前 VPN 状态: $INIT_STATE (结束后将恢复) ==="
+
+# ---------- 1. 强制关 VPN (测速需要真实网络) ----------
+log "=== 1. 关闭 VPN ($VPN) 用于测速 ==="
 /usr/sbin/scutil --nc stop "$VPN" 2>/dev/null
 sleep 3
 VPN_STATE=$(/usr/sbin/scutil --nc status "$VPN" 2>/dev/null | head -1)
@@ -87,9 +91,18 @@ else
   fi
 fi
 
-# ---------- 6. 关 VPN (恢复默认) ----------
-log "=== 6. 关闭 VPN 恢复 ==="
-/usr/sbin/scutil --nc stop "$VPN" 2>/dev/null
-sleep 3
-log "最终 VPN: $(/usr/sbin/scutil --nc status "$VPN" | head -1)"
+# ---------- 6. 恢复 VPN 到运行前状态 ----------
+log "=== 6. 恢复 VPN (初始: $INIT_STATE) ==="
+if [ "$INIT_STATE" = "Connected" ]; then
+  /usr/sbin/scutil --nc start "$VPN" 2>/dev/null
+  sleep 4
+else
+  /usr/sbin/scutil --nc stop "$VPN" 2>/dev/null
+  sleep 3
+fi
+FINAL_STATE=$(/usr/sbin/scutil --nc status "$VPN" 2>/dev/null | head -1)
+log "最终 VPN: $FINAL_STATE (期望回到: $INIT_STATE)"
+if [ "$FINAL_STATE" != "$INIT_STATE" ]; then
+  log "WARN: VPN 未恢复到初始状态, 请检查"
+fi
 log "=== 完成 ==="
