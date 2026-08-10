@@ -15,9 +15,9 @@ async function fetchSpeedNodes(uuid, domain, proxyIP) {
   const BASE = "https://raw.githubusercontent.com/wszhxz/CloudflareIP/main";
   const regionFiles = {
     SG: "SG.txt", JP: "JP.txt", DE: "DE.txt", NL: "NL.txt", US: "US.txt",
-    HK: "HK.txt", KR: "KR.txt"  // HK/KR: community cf-ray verified Colo IPs
+    HK: "HK.txt", KR: "KR.txt", TW: "TW.txt", TR: "TR.txt"
   };
-  const cnames = { SG: "\u65b0\u52a0\u5761", JP: "\u65e5\u672c", US: "\u7f8e\u56fd", DE: "\u5fb7\u56fd", NL: "\u8377\u5170", HK: "\u4e2d\u56fd\u9999\u6e2f", KR: "\u97e9\u56fd" };
+  const cnames = { SG: "\u65b0\u52a0\u5761", JP: "\u65e5\u672c", US: "\u7f8e\u56fd", DE: "\u5fb7\u56fd", NL: "\u8377\u5170", HK: "\u4e2d\u56fd\u9999\u6e2f", KR: "\u97e9\u56fd", TW: "\u53f0\u6e7e", TR: "\u571f\u8033\u5176" };
 
   const nodes = [];
 
