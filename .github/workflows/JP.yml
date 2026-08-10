@@ -1,10 +1,7 @@
 name: JP
 
 on:
-  push:              # 每次 push 时触发
-  schedule:
-   - cron: '25 2 * * *' # Runs at 02:25, only on Wednesday
-  workflow_dispatch:      # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   run-script:

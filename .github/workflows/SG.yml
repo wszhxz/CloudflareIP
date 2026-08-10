@@ -1,10 +1,7 @@
 name: SG
 
 on:
-  push:              # 每次 push 时触发
-  schedule:
-   - cron: '45 2 * * *' # Runs at 02:45, only on Wednesday
-  workflow_dispatch:      # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   run-script:

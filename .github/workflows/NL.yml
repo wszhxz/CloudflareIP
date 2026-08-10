@@ -1,10 +1,7 @@
 name: NL
 
 on:
-  push:              # 每次 push 时触发
-  schedule:
-   - cron: '35 2 * * *' # Runs at 02:35, only on Wednesday
-  workflow_dispatch:      # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   run-script:

@@ -1,10 +1,7 @@
 name: HK
 
 on:
-  push:              # 每次 push 时触发
-  schedule:
-   - cron: '05 2 * * *' # Runs daily at 02:05
-  workflow_dispatch:      # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   run-script:
