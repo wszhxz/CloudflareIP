@@ -6,6 +6,7 @@
 # 依赖: macOS scutil (控制 Shadowrocket VPN), git, python3
 # ============================================================
 set -e
+export PATH="/usr/sbin:/usr/bin:/bin:$PATH"
 cd "$(dirname "$0")/.."
 
 VPN="Shadowrocket"
@@ -16,9 +17,9 @@ log() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
 
 # ---------- 1. 关 VPN ----------
 log "=== 1. 关闭 VPN ($VPN) ==="
-scutil --nc stop "$VPN" 2>/dev/null
+/usr/sbin/scutil --nc stop "$VPN" 2>/dev/null
 sleep 3
-VPN_STATE=$(scutil --nc status "$VPN" 2>/dev/null | head -1)
+VPN_STATE=$(/usr/sbin/scutil --nc status "$VPN" 2>/dev/null | head -1)
 log "VPN 状态: $VPN_STATE"
 if [ "$VPN_STATE" != "Disconnected" ]; then
   log "ERROR: VPN 未能关闭, 中止 (避免假速测)"
@@ -55,9 +56,9 @@ fi
 
 # ---------- 4. 开 VPN (push 需要) ----------
 log "=== 4. 开启 VPN ($VPN) 用于推送 ==="
-scutil --nc start "$VPN" 2>/dev/null
+/usr/sbin/scutil --nc start "$VPN" 2>/dev/null
 sleep 5
-VPN_STATE=$(scutil --nc status "$VPN" 2>/dev/null | head -1)
+VPN_STATE=$(/usr/sbin/scutil --nc status "$VPN" 2>/dev/null | head -1)
 log "VPN 状态: $VPN_STATE"
 if [ "$VPN_STATE" != "Connected" ]; then
   log "WARN: VPN 未连上, 尝试 push (可能需要你手动开)"
@@ -70,20 +71,25 @@ if git diff --cached --quiet; then
   log "  TXT 无变化, 跳过 push"
 else
   git commit -m "Update 9-country nodes (domestic-optimized speed test) [skip ci]" || true
+  # 方向A: 本地测速为准. rebase冲突时强制以本地覆盖远程(丢弃Actions改动)再push
   if git pull --rebase origin main 2>/dev/null; then
-    if git push origin main 2>&1 | tee -a "$LOG"; then
-      log "  ✅ push 成功"
-    else
-      log "  ❌ push 失败"
-    fi
+    :
   else
-    log "  ⚠️ rebase 冲突, 需人工处理"
+    log "  ⚠️ rebase冲突 -> 强制以本地为准(reset --hard origin/main)"
+    git fetch origin main 2>/dev/null || true
+    git reset --hard origin/main 2>/dev/null
+    git commit -am "Update 9-country nodes (domestic-optimized speed test) [skip ci]" 2>/dev/null || true
+  fi
+  if git push origin main 2>&1 | tee -a "$LOG"; then
+    log "  ✅ push 成功"
+  else
+    log "  ❌ push 失败"
   fi
 fi
 
 # ---------- 6. 关 VPN (恢复默认) ----------
 log "=== 6. 关闭 VPN 恢复 ==="
-scutil --nc stop "$VPN" 2>/dev/null
+/usr/sbin/scutil --nc stop "$VPN" 2>/dev/null
 sleep 3
-log "最终 VPN: $(scutil --nc status "$VPN" | head -1)"
+log "最终 VPN: $(/usr/sbin/scutil --nc status "$VPN" | head -1)"
 log "=== 完成 ==="
